@@ -1,4 +1,5 @@
 import { firebaseConfig, useFirebase } from './firebase-config.js';
+export { useFirebase };
 
 let db = null;
 let auth = null;
