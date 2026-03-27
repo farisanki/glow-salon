@@ -216,10 +216,11 @@ async function renderAdminDashboard() {
                 </div>
                 <div class="form-group">
                     <label style="font-size:0.85rem;color:var(--text-secondary)">${t('assignOwner')}</label>
-                    <select id="owner-select">
-                        <option value="">${t('selectUserOption')}</option>
-                        ${nonAdmins.map(u => `<option value="${u.uid}">${u.name || u.email} &lt;${u.email}&gt;</option>`).join('')}
-                    </select>
+                    <input type="email" id="owner-email-input" placeholder="${t('ownerEmailPlaceholder')}" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label style="font-size:0.85rem;color:var(--text-secondary)">${t('openedOn')}</label>
+                    <input type="date" id="shop-joined-date">
                 </div>
                 <div id="admin-shop-error" style="color:var(--error);font-size:0.85rem;margin-bottom:0.5rem;display:none"></div>
                 <button id="add-shop-btn" class="btn-primary">${t('createShop')}</button>
@@ -254,31 +255,41 @@ async function renderAdminDashboard() {
 
             <div class="glass-card mt-4">
                 <h3>${t('activeShopsLabel')} (${shops.length})</h3>
-                ${shops.map(s => `<div class="mt-2" style="padding:0.5rem 0;border-bottom:1px solid var(--glass-border)">${s.name} &mdash; ${s.location}</div>`).join('') || `<p class="text-secondary">${t('noShopsMsg')}</p>`}
+                ${shops.map(s => `
+                    <div class="mt-2" style="padding:0.5rem 0;border-bottom:1px solid var(--glass-border)">
+                        <strong>${s.name}</strong> &mdash; ${s.location}
+                        ${s.joinedDate ? `<div class="text-secondary" style="font-size:0.78rem;margin-top:2px">${t('openedOn')}: ${s.joinedDate}</div>` : ''}
+                    </div>`).join('') || `<p class="text-secondary">${t('noShopsMsg')}</p>`}
             </div>
         </div>
     `;
 
     document.getElementById('add-shop-btn').onclick = async () => {
-        const name     = document.getElementById('shop-name').value.trim();
-        const location = document.getElementById('shop-location').value.trim();
-        const ownerUid = document.getElementById('owner-select').value;
-        const errEl    = document.getElementById('admin-shop-error');
-        if (!name || !location || !ownerUid) {
+        const name       = document.getElementById('shop-name').value.trim();
+        const location   = document.getElementById('shop-location').value.trim();
+        const ownerEmail = document.getElementById('owner-email-input').value.trim().toLowerCase();
+        const joinedDate = document.getElementById('shop-joined-date').value;
+        const errEl      = document.getElementById('admin-shop-error');
+        if (!name || !location || !ownerEmail) {
             errEl.textContent = t('fillShopFields');
             errEl.style.display = 'block'; return;
         }
+        const owner = allUsers.find(u => (u.email || '').toLowerCase() === ownerEmail);
+        if (!owner) {
+            errEl.textContent = t('ownerNotFound');
+            errEl.style.display = 'block'; return;
+        }
         errEl.style.display = 'none';
-        const owner = allUsers.find(u => u.uid === ownerUid);
-        await Store.setUserRole(ownerUid, 'owner');
+        await Store.setUserRole(owner.uid, 'owner');
         await Store.addShop({
             id: Date.now().toString(),
             name,
             location,
-            ownerId: ownerUid,
-            ownerEmail: owner?.email || '',
+            ownerId: owner.uid,
+            ownerEmail: owner.email || '',
             phone: '',
             description: '',
+            joinedDate: joinedDate || new Date().toISOString().slice(0,10),
             schedule: { mon: { open: '09:00', close: '20:00', off: false }, tue: { open: '09:00', close: '20:00', off: false }, wed: { open: '09:00', close: '20:00', off: false }, thu: { open: '09:00', close: '20:00', off: false }, fri: { open: '09:00', close: '20:00', off: false }, sat: { open: '10:00', close: '18:00', off: false }, sun: { open: '10:00', close: '18:00', off: true } },
             photos: []
         });
@@ -313,6 +324,7 @@ async function renderOwnerDashboard() {
         <div class="p-4">
             <h2>${shop.name} ${t('dashboard')}</h2>
             <p class="text-secondary">📍 ${shop.location}</p>
+            ${shop.joinedDate ? `<p class="text-secondary" style="font-size:0.8rem">📅 ${t('memberSince')} ${shop.joinedDate}</p>` : ''}
 
             <!-- Shop Profile -->
             <div class="glass-card mt-4">
