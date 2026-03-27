@@ -2,8 +2,10 @@ import { initAuth, onAuthStateChanged, logout } from './auth.js';
 import { renderView } from './ui.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log("App Starting...");
     // Initialize Firebase and Auth
     await initAuth();
+    console.log("Auth Init Complete");
 
     // Listen for Auth changes
     onAuthStateChanged(user => {

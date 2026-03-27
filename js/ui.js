@@ -16,13 +16,13 @@ export function updateNotiBell() {
     }
 }
 
-export function renderView(viewName) {
+export async function renderView(viewName) {
     const user = getCurrentUser();
     
     // Simple router handle Salon Detail
     if (viewName.startsWith('salon/')) {
         const id = viewName.split('/')[1];
-        renderSalonDetail(id);
+        await renderSalonDetail(id);
         return;
     }
 
@@ -31,10 +31,10 @@ export function renderView(viewName) {
             renderLogin();
             break;
         case 'home':
-            if (user?.role === 'admin') renderAdminDashboard();
-            else if (user?.role === 'owner') renderOwnerDashboard();
-            else if (user?.role === 'employee') renderEmployeeDashboard();
-            else renderClientHome();
+            if (user?.role === 'admin') await renderAdminDashboard();
+            else if (user?.role === 'owner') await renderOwnerDashboard();
+            else if (user?.role === 'employee') await renderEmployeeDashboard();
+            else await renderClientHome();
             break;
         case 'bookings':
             renderBookings();
@@ -76,8 +76,8 @@ function renderLogin() {
     };
 }
 
-function renderAdminDashboard() {
-    const owners = Store.getShops();
+async function renderAdminDashboard() {
+    const owners = await Store.getShops();
     main.innerHTML = `
         <div class="p-4">
             <h2>System Admin</h2>
@@ -95,20 +95,21 @@ function renderAdminDashboard() {
             ${owners.map(s => `<div class="glass-card mt-2">${s.name} - ${s.location} <button class="btn-text" style="color:red">Remove</button></div>`).join('')}
         </div>
     `;
-    document.getElementById('add-shop-btn').onclick = () => {
+    document.getElementById('add-shop-btn').onclick = async () => {
         const name = document.getElementById('shop-name').value;
         const email = document.getElementById('owner-email').value;
         if (name && email) {
-            Store.addShop({ id: Date.now().toString(), name, location: 'TBD', ownerId: email });
+            await Store.addShop({ id: Date.now().toString(), name, location: 'TBD', ownerId: email });
             renderAdminDashboard();
         }
     };
 }
 
-function renderOwnerDashboard() {
+async function renderOwnerDashboard() {
     const user = getCurrentUser();
-    const shop = Store.getShops().find(s => s.ownerId === user.email) || Store.getShops()[0];
-    const employees = Store.getEmployees(shop.id);
+    const shops = await Store.getShops();
+    const shop = shops.find(s => s.ownerId === user.email) || shops[0];
+    const employees = await Store.getEmployees(shop.id);
 
     main.innerHTML = `
         <div class="p-4">
@@ -123,7 +124,7 @@ function renderOwnerDashboard() {
                 </div>
                  <div class="form-group">
                     <label>Working Hours</label>
-                    <input type="text" value="${shop.workingHours.open} - ${shop.workingHours.close}" readonly>
+                    <input type="text" value="${shop.workingHours?.open || '9:00'} - ${shop.workingHours?.close || '20:00'}" readonly>
                 </div>
                 <button class="btn-primary" style="padding:0.5rem">Edit Profile</button>
             </div>
@@ -141,18 +142,19 @@ function renderOwnerDashboard() {
         </div>
     `;
 
-    document.getElementById('add-emp-btn').onclick = () => {
+    document.getElementById('add-emp-btn').onclick = async () => {
         const name = document.getElementById('emp-name').value;
         if (name) {
-            Store.addEmployee({ id: Date.now().toString(), name, shopId: shop.id, available: true });
+            await Store.addEmployee({ id: Date.now().toString(), name, shopId: shop.id, available: true });
             renderOwnerDashboard();
         }
     };
 }
 
-function renderEmployeeDashboard() {
+async function renderEmployeeDashboard() {
     const user = getCurrentUser();
-    const emp = Store.getEmployees().find(e => e.name === 'Alex'); // Mock find
+    const emps = await Store.getEmployees();
+    const emp = emps.find(e => e.name === 'Alex') || emps[0]; // Mock find
     main.innerHTML = `
         <div class="p-4">
             <h2>Welcome Barber</h2>
@@ -164,14 +166,14 @@ function renderEmployeeDashboard() {
             <div class="glass-card">No appointments yet.</div>
         </div>
     `;
-    document.getElementById('toggle-avail').onclick = () => {
-         Store.updateEmployeeStatus(emp.id, !emp.available);
+    document.getElementById('toggle-avail').onclick = async () => {
+         await Store.updateEmployeeStatus(emp.id, !emp.available);
          renderEmployeeDashboard();
     };
 }
 
-function renderClientHome() {
-    const salons = Store.getShops();
+async function renderClientHome() {
+    const salons = await Store.getShops();
     main.innerHTML = `
         <div class="p-4">
             <h2 class="mb-4">Find a Salon</h2>
@@ -186,9 +188,9 @@ function renderClientHome() {
     `;
 }
 
-function renderSalonDetail(id) {
-    const shop = Store.getShop(id);
-    const employees = Store.getEmployees(id).filter(e => e.available);
+async function renderSalonDetail(id) {
+    const shop = await Store.getShop(id);
+    const employees = (await Store.getEmployees(id)).filter(e => e.available);
 
     main.innerHTML = `
         <div class="p-4">
@@ -221,15 +223,15 @@ function renderSalonDetail(id) {
         document.getElementById('booking-slots').classList.remove('hidden');
     };
 
-    window.book = (sid, time) => {
+    window.book = async (sid, time) => {
         const user = getCurrentUser();
-        const shop = Store.getShop(sid);
+        const shop = await Store.getShop(sid);
         
         // Add booking
-        Store.addAppointment({ sid, time, userId: user.uid });
+        await Store.addAppointment({ sid, time, userId: user.uid });
         
         // Notify owner
-        Store.addNotification({
+        await Store.addNotification({
             id: Date.now().toString(),
             recipientId: shop.ownerId, // For mock, ownerId is email
             title: 'New Booking!',
