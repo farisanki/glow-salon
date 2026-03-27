@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Glow - Premium Salon Booking</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body class="dark-theme">
+    <div id="app">
+        <!-- Navigation Header -->
+        <header class="glass-header">
+            <div class="logo">GLOW</div>
+            <div class="nav-actions">
+                <button id="noti-btn" class="icon-btn" style="display: none;">🔔<span class="badge"></span></button>
+                <button id="logout-btn" class="btn-text" style="display: none;">Logout</button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+            <!-- Views will be injected here -->
+            <div id="loader" class="loader-container">
+                <div class="spinner"></div>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation (For Mobile) -->
+        <nav id="bottom-nav" class="glass-nav" style="display: none;">
+            <a href="#" class="nav-item active" data-view="home">🏠</a>
+            <a href="#" class="nav-item" data-view="bookings">📅</a>
+            <a href="#" class="nav-item" data-view="profile">👤</a>
+        </nav>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- Firebase SDKs -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
