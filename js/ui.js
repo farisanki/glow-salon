@@ -279,7 +279,8 @@ async function renderAdminDashboard() {
             ownerEmail: owner?.email || '',
             phone: '',
             description: '',
-            workingHours: { open: '09:00', close: '20:00' }
+            schedule: { mon: { open: '09:00', close: '20:00', off: false }, tue: { open: '09:00', close: '20:00', off: false }, wed: { open: '09:00', close: '20:00', off: false }, thu: { open: '09:00', close: '20:00', off: false }, fri: { open: '09:00', close: '20:00', off: false }, sat: { open: '10:00', close: '18:00', off: false }, sun: { open: '10:00', close: '18:00', off: true } },
+            photos: []
         });
         renderAdminDashboard();
     };
@@ -298,31 +299,83 @@ async function renderOwnerDashboard() {
     const shop = shops.find(s => s.ownerId === user.uid || s.ownerEmail === user.email) || shops[0];
 
     if (!shop) {
-        main.innerHTML = `<div class="p-4"><div class="glass-card"><h2>No Shop Found</h2><p class="text-secondary mt-2">No shop has been assigned to your account yet. Contact admin.</p></div></div>`;
+        main.innerHTML = `<div class="p-4"><div class="glass-card"><h2>${t('noShopFound')}</h2><p class="text-secondary mt-2">${t('noShopMsg')}</p></div></div>`;
         return;
     }
 
     const employees = await Store.getEmployees(shop.id);
     const services = await Store.getServices(shop.id);
+    const days = ['mon','tue','wed','thu','fri','sat','sun'];
+    const sched = shop.schedule || {};
+    const photos = shop.photos || [];
 
     main.innerHTML = `
         <div class="p-4">
             <h2>${shop.name} ${t('dashboard')}</h2>
             <p class="text-secondary">📍 ${shop.location}</p>
 
+            <!-- Shop Profile -->
             <div class="glass-card mt-4">
                 <h3>${t('shopProfile')}</h3>
-                <div class="form-group">
+                <div class="form-group mt-2">
                     <label>${t('phone')}</label>
-                    <input type="text" value="${shop.phone || ''}" readonly>
+                    <input type="text" id="prof-phone" value="${shop.phone || ''}">
                 </div>
                 <div class="form-group">
-                    <label>${t('workingHours')}</label>
-                    <input type="text" value="${shop.workingHours?.open || '9:00'} - ${shop.workingHours?.close || '20:00'}" readonly>
+                    <label>${t('descriptionPlaceholder').replace('…','')}</label>
+                    <input type="text" id="prof-desc" value="${shop.description || ''}" placeholder="${t('descriptionPlaceholder')}">
                 </div>
-                <button class="btn-primary" style="padding:0.5rem">${t('editProfile')}</button>
+                <div id="prof-msg" style="color:var(--accent);font-size:0.85rem;margin-bottom:0.5rem;display:none">${t('profileSaved')}</div>
+                <button id="save-prof-btn" class="btn-primary">${t('saveProfile')}</button>
             </div>
 
+            <!-- Weekly Schedule -->
+            <div class="glass-card mt-4">
+                <h3>${t('schedule')}</h3>
+                <div class="schedule-grid mt-2">
+                    <div class="schedule-header">
+                        <span>${t('mon').substring(0,3)}</span>
+                        <span>${t('openTime')}</span>
+                        <span>${t('closeTime')}</span>
+                        <span>${t('dayOff')}</span>
+                    </div>
+                    ${days.map(d => {
+                        const day = sched[d] || { open: '09:00', close: '20:00', off: false };
+                        return `
+                        <div class="day-row${day.off ? ' day-off-row' : ''}">
+                            <span class="day-label">${t(d)}</span>
+                            <input type="time" class="sched-open" data-day="${d}" value="${day.open}" ${day.off ? 'disabled' : ''}>
+                            <input type="time" class="sched-close" data-day="${d}" value="${day.close}" ${day.off ? 'disabled' : ''}>
+                            <label class="toggle-label">
+                                <input type="checkbox" class="sched-off" data-day="${d}" ${day.off ? 'checked' : ''}>
+                                <span class="toggle-track"></span>
+                            </label>
+                        </div>`;
+                    }).join('')}
+                </div>
+                <div id="sched-msg" style="color:var(--accent);font-size:0.85rem;margin-top:0.5rem;display:none">${t('scheduleSaved')}</div>
+                <button id="save-sched-btn" class="btn-primary mt-2">${t('saveSchedule')}</button>
+            </div>
+
+            <!-- Shop Photos -->
+            <div class="glass-card mt-4">
+                <h3>${t('shopPhotos')}</h3>
+                <div class="photo-gallery mt-2" id="photo-gallery">
+                    ${photos.length === 0
+                        ? `<p class="text-secondary" id="no-photos-msg">${t('noPhotos')}</p>`
+                        : photos.map((src, i) => `
+                            <div class="photo-thumb">
+                                <img src="${src}" alt="shop photo">
+                                <button class="photo-del-btn" onclick="deleteShopPhoto('${shop.id}', ${i})">✕</button>
+                            </div>`).join('')}
+                </div>
+                <label class="btn-primary mt-2" style="display:inline-block;cursor:pointer">
+                    ${t('uploadPhoto')}
+                    <input type="file" id="photo-input" accept="image/*" multiple style="display:none">
+                </label>
+            </div>
+
+            <!-- Manage Employees -->
             <div class="glass-card mt-4">
                 <h3>${t('manageEmployees')}</h3>
                 <div class="form-group mt-2">
@@ -334,6 +387,7 @@ async function renderOwnerDashboard() {
                 </div>
             </div>
 
+            <!-- Services & Prices -->
             <div class="glass-card mt-4">
                 <h3>${t('servicesAndPrices')}</h3>
                 <div class="form-group mt-2">
@@ -367,6 +421,61 @@ async function renderOwnerDashboard() {
         </div>
     `;
 
+    // Save profile
+    document.getElementById('save-prof-btn').onclick = async () => {
+        const phone = document.getElementById('prof-phone').value.trim();
+        const description = document.getElementById('prof-desc').value.trim();
+        await Store.updateShop(shop.id, { phone, description });
+        const msg = document.getElementById('prof-msg');
+        msg.style.display = 'block';
+        setTimeout(() => { msg.style.display = 'none'; }, 2000);
+    };
+
+    // Day-off toggle wires: enable/disable time inputs live
+    document.querySelectorAll('.sched-off').forEach(cb => {
+        cb.addEventListener('change', () => {
+            const day = cb.dataset.day;
+            const row = cb.closest('.day-row');
+            row.classList.toggle('day-off-row', cb.checked);
+            row.querySelector('.sched-open').disabled = cb.checked;
+            row.querySelector('.sched-close').disabled = cb.checked;
+        });
+    });
+
+    // Save schedule
+    document.getElementById('save-sched-btn').onclick = async () => {
+        const newSchedule = {};
+        days.forEach(d => {
+            const off = document.querySelector(`.sched-off[data-day="${d}"]`).checked;
+            const open = document.querySelector(`.sched-open[data-day="${d}"]`).value || '09:00';
+            const close = document.querySelector(`.sched-close[data-day="${d}"]`).value || '20:00';
+            newSchedule[d] = { open, close, off };
+        });
+        await Store.updateShop(shop.id, { schedule: newSchedule });
+        const msg = document.getElementById('sched-msg');
+        msg.style.display = 'block';
+        setTimeout(() => { msg.style.display = 'none'; }, 2000);
+    };
+
+    // Photo upload
+    document.getElementById('photo-input').addEventListener('change', async (e) => {
+        for (const file of e.target.files) {
+            const base64 = await new Promise(res => {
+                const reader = new FileReader();
+                reader.onload = ev => res(ev.target.result);
+                reader.readAsDataURL(file);
+            });
+            await Store.addShopPhoto(shop.id, base64);
+        }
+        renderOwnerDashboard();
+    });
+
+    window.deleteShopPhoto = async (shopId, index) => {
+        await Store.deleteShopPhoto(shopId, index);
+        renderOwnerDashboard();
+    };
+
+    // Add employee
     document.getElementById('add-emp-btn').onclick = async () => {
         const name = document.getElementById('emp-name').value.trim();
         if (name) {
@@ -375,6 +484,7 @@ async function renderOwnerDashboard() {
         }
     };
 
+    // Add service
     document.getElementById('add-svc-btn').onclick = async () => {
         const name = document.getElementById('svc-name').value.trim();
         const price = parseFloat(document.getElementById('svc-price').value);
@@ -436,11 +546,35 @@ async function renderSalonDetail(id) {
 
     let selectedServiceId = null;
 
+    const days = ['mon','tue','wed','thu','fri','sat','sun'];
+    const sched = shop.schedule || {};
+    const photos = shop.photos || [];
+
     main.innerHTML = `
         <div class="p-4">
             <button class="btn-text mb-2" onclick="renderView('home')">${t('back')}</button>
             <h2>${shop.name}</h2>
             <p class="text-secondary">${shop.description || ''}</p>
+
+            ${photos.length > 0 ? `
+            <div class="photo-gallery mt-4">
+                ${photos.map(src => `<div class="photo-thumb"><img src="${src}" alt="shop photo"></div>`).join('')}
+            </div>` : ''}
+
+            <div class="glass-card mt-4">
+                <h3>${t('schedule')}</h3>
+                <div class="mt-2">
+                    ${days.map(d => {
+                        const day = sched[d] || { open: '09:00', close: '20:00', off: false };
+                        return `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--glass-border);${day.off ? 'opacity:0.45' : ''}">
+                            <span>${t(d)}</span>
+                            <span style="color:${day.off ? 'var(--text-secondary)' : 'var(--accent)'};font-weight:600">
+                                ${day.off ? t('dayOff') : `${day.open} – ${day.close}`}
+                            </span>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>
 
             <h3 class="mt-4">${t('step1Service')}</h3>
             <div id="service-list" class="mt-2">

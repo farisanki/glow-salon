@@ -4,7 +4,7 @@ const STORAGE_KEY = 'glow_store';
 
 let store = {
     shops: [
-        { id: 'salon-1', name: 'Royal Cuts', location: 'City Center, Downtown', phone: '+12345678', ownerId: 'owner-1', description: 'Elite grooming for gentlemen.', workingHours: { open: '09:00', close: '20:00' } }
+        { id: 'salon-1', name: 'Royal Cuts', location: 'City Center, Downtown', phone: '+12345678', ownerId: 'owner-1', description: 'Elite grooming for gentlemen.', schedule: { mon: { open: '09:00', close: '20:00', off: false }, tue: { open: '09:00', close: '20:00', off: false }, wed: { open: '09:00', close: '20:00', off: false }, thu: { open: '09:00', close: '20:00', off: false }, fri: { open: '09:00', close: '20:00', off: false }, sat: { open: '10:00', close: '18:00', off: false }, sun: { open: '10:00', close: '18:00', off: true } }, photos: [] }
     ],
     employees: [
         { id: 'emp-1', name: 'Alex', shopId: 'salon-1', available: true, uid: 'emp-uid-1' }
@@ -45,6 +45,30 @@ export const Store = {
     addShop: async (salon) => {
         store.shops.push(salon);
         save();
+    },
+    updateShop: async (id, data) => {
+        if (useFirebase) {
+            const { doc, updateDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            await updateDoc(doc(firebaseServices.db, 'shops', id), data);
+        } else {
+            const shop = store.shops.find(s => s.id === id);
+            if (shop) { Object.assign(shop, data); save(); }
+        }
+    },
+    addShopPhoto: async (shopId, base64) => {
+        const shop = store.shops.find(s => s.id === shopId);
+        if (shop) {
+            if (!shop.photos) shop.photos = [];
+            shop.photos.push(base64);
+            save();
+        }
+    },
+    deleteShopPhoto: async (shopId, index) => {
+        const shop = store.shops.find(s => s.id === shopId);
+        if (shop && shop.photos) {
+            shop.photos.splice(index, 1);
+            save();
+        }
     },
     
     getEmployees: async (shopId) => {

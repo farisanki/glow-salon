@@ -1,4 +1,4 @@
-const CACHE_NAME = 'glow-v3';
+const CACHE_NAME = 'glow-v4';
 const ASSETS = [
   './',
   './index.html',
