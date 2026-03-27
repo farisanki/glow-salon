@@ -44,7 +44,7 @@ self.addEventListener('fetch', (event) => {
 // and send push messages from Firebase Functions or your backend.
 self.addEventListener('push', (event) => {
   const data = event.data?.json() ?? {};
-  const title = data.title || 'GLOW';
+  const title = data.title || 'The Barber Shop';
   const body  = data.body  || 'You have a new notification';
   event.waitUntil(
     self.registration.showNotification(title, {

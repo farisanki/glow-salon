@@ -1,6 +1,6 @@
 const T = {
     en: {
-        appName: 'GLOW',
+        appName: 'The Barber Shop',
         logout: 'Logout',
         welcome: 'Welcome',
         signInSub: 'Sign in to your account',
@@ -87,7 +87,7 @@ const T = {
         newBookingTitle: 'New Booking!',
     },
     ar: {
-        appName: 'غلو',
+        appName: 'صالون الحلاق',
         logout: 'تسجيل الخروج',
         welcome: 'مرحباً',
         signInSub: 'سجّل الدخول إلى حسابك',

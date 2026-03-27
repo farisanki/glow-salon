@@ -1,7 +1,7 @@
 {
-  "name": "Glow Salon Booking",
-  "short_name": "Glow",
-  "description": "Premium Barber and Salon Booking",
+  "name": "The Barber Shop",
+  "short_name": "Barber Shop",
+  "description": "Barber & Salon Booking",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#0d0d16",
