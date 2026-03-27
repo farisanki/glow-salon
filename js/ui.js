@@ -318,6 +318,14 @@ async function renderOwnerDashboard() {
             <div class="glass-card mt-4">
                 <h3>${t('shopProfile')}</h3>
                 <div class="form-group mt-2">
+                    <label>${t('shopName')}</label>
+                    <input type="text" id="prof-shopname" value="${shop.name || ''}" placeholder="${t('shopNamePlaceholder')}">
+                </div>
+                <div class="form-group">
+                    <label>${t('shopLocation')}</label>
+                    <input type="text" id="prof-location" value="${shop.location || ''}" placeholder="${t('shopLocationPlaceholder')}">
+                </div>
+                <div class="form-group">
                     <label>${t('phone')}</label>
                     <input type="text" id="prof-phone" value="${shop.phone || ''}">
                 </div>
@@ -425,9 +433,14 @@ async function renderOwnerDashboard() {
 
     // Save profile
     document.getElementById('save-prof-btn').onclick = async () => {
-        const phone = document.getElementById('prof-phone').value.trim();
+        const name        = document.getElementById('prof-shopname').value.trim();
+        const location    = document.getElementById('prof-location').value.trim();
+        const phone       = document.getElementById('prof-phone').value.trim();
         const description = document.getElementById('prof-desc').value.trim();
-        await Store.updateShop(shop.id, { phone, description });
+        await Store.updateShop(shop.id, { ...(name && { name }), ...(location && { location }), phone, description });
+        // Update page heading live
+        if (name) document.querySelector('.p-4 h2').textContent = `${name} ${t('dashboard')}`;
+        if (location) document.querySelector('.p-4 > p.text-secondary').textContent = `📍 ${location}`;
         const msg = document.getElementById('prof-msg');
         msg.style.display = 'block';
         setTimeout(() => { msg.style.display = 'none'; }, 2000);
