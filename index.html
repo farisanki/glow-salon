@@ -8,8 +8,16 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a1a2e">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Google Fonts (Latin + Arabic) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Inter:wght@400;500&family=Noto+Sans+Arabic:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Apply saved language direction before first render to prevent flicker -->
+    <script>
+        (function(){
+            var l = localStorage.getItem('glow_lang') || 'en';
+            document.documentElement.lang = l;
+            document.documentElement.dir = l === 'ar' ? 'rtl' : 'ltr';
+        })();
+    </script>
 </head>
 <body class="dark-theme">
     <div id="app">
@@ -17,6 +25,7 @@
         <header class="glass-header">
             <div class="logo">GLOW</div>
             <div class="nav-actions">
+                <button id="lang-btn" class="lang-toggle" onclick="window.toggleLang()">عربي</button>
                 <button id="noti-btn" class="icon-btn" style="display: none;">🔔<span class="badge"></span></button>
                 <button id="logout-btn" class="btn-text" style="display: none;">Logout</button>
             </div>

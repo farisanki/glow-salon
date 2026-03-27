@@ -207,3 +207,54 @@ h1, h2, h3, .logo {
 .hidden { display: none !important; }
 .p-4 { padding: 1rem; }
 .mt-4 { margin-top: 1rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.pb-2 { padding-bottom: 0.5rem; }
+.text-center { text-align: center; }
+.text-secondary { color: var(--text-secondary); }
+
+/* ── Arabic / RTL ──────────────────────────────────────────── */
+[dir="rtl"] body {
+    font-family: 'Noto Sans Arabic', var(--font-body);
+}
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] .logo {
+    font-family: 'Noto Sans Arabic', var(--font-heading);
+    letter-spacing: 0;
+}
+/* Keep numbers, emails and prices left-to-right inside RTL layout */
+[dir="rtl"] input[type="email"],
+[dir="rtl"] input[type="number"],
+[dir="rtl"] input[type="password"] {
+    direction: ltr;
+    text-align: right;
+}
+
+/* Language toggle button */
+.lang-toggle {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.65rem;
+    border: 1px solid var(--glass-border);
+    border-radius: 0.5rem;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+.lang-toggle:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* btn-text helper */
+.btn-text {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0;
+}

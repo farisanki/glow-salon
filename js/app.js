@@ -1,5 +1,7 @@
 import { initAuth, onAuthStateChanged, logout } from './auth.js';
 import { renderView, updateNotiBell } from './ui.js';
+import { requestNotificationPermission } from './notify.js';
+import { t } from './i18n.js';
 
 function showError(err) {
     console.error("App Error:", err);
@@ -22,7 +24,9 @@ async function initApp() {
         onAuthStateChanged(user => {
             console.log("Auth State Changed:", user ? user.role : 'Guest');
             if (user) {
+                requestNotificationPermission();
                 document.getElementById('logout-btn').style.display = 'block';
+                document.getElementById('logout-btn').textContent = t('logout');
                 document.getElementById('noti-btn').style.display = 'block';
                 document.getElementById('bottom-nav').style.display = 'flex';
                 updateNotiBell();

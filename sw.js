@@ -1,4 +1,4 @@
-const CACHE_NAME = 'glow-v2';
+const CACHE_NAME = 'glow-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -10,6 +10,8 @@ const ASSETS = [
   './js/store.js',
   './js/firebase-init.js',
   './js/firebase-config.js',
+  './js/i18n.js',
+  './js/notify.js',
   './icons/icon.svg'
 ];
 
@@ -35,4 +37,26 @@ self.addEventListener('fetch', (event) => {
       return response || fetch(event.request);
     })
   );
+});
+
+// Receive push payloads from Firebase Cloud Messaging (FCM)
+// To enable cross-device barber notifications, set up FCM in your Firebase project
+// and send push messages from Firebase Functions or your backend.
+self.addEventListener('push', (event) => {
+  const data = event.data?.json() ?? {};
+  const title = data.title || 'GLOW';
+  const body  = data.body  || 'You have a new notification';
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon:  './icons/icon.svg',
+      badge: './icons/icon.svg',
+      vibrate: [200, 100, 200],
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(clients.openWindow('./'));
 });
