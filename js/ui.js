@@ -379,11 +379,13 @@ async function renderOwnerDashboard() {
             <div class="glass-card mt-4">
                 <h3>${t('manageEmployees')}</h3>
                 <div class="form-group mt-2">
-                    <input type="text" id="emp-name" placeholder="${t('empNamePlaceholder')}">
+                    <input type="email" id="emp-email" placeholder="${t('empNamePlaceholder')}" autocomplete="off">
                 </div>
+                <div id="emp-error" style="color:var(--error);font-size:0.85rem;margin-bottom:0.5rem;display:none"></div>
+                <div id="emp-success" style="color:var(--accent);font-size:0.85rem;margin-bottom:0.5rem;display:none">${t('barberAdded')}</div>
                 <button id="add-emp-btn" class="btn-primary">${t('addBarber')}</button>
                 <div class="mt-4">
-                    ${employees.map(e => `<div class="text-secondary">${e.name} - ${e.available ? t('statusOnline') : t('statusAway')}</div>`).join('')}
+                    ${employees.map(e => `<div class="text-secondary">${e.name} <span style="font-size:0.78rem;opacity:0.6">${e.email || ''}</span> - ${e.available ? t('statusOnline') : t('statusAway')}</div>`).join('')}
                 </div>
             </div>
 
@@ -475,13 +477,36 @@ async function renderOwnerDashboard() {
         renderOwnerDashboard();
     };
 
-    // Add employee
+    // Add employee — search by email, promote role to 'employee'
     document.getElementById('add-emp-btn').onclick = async () => {
-        const name = document.getElementById('emp-name').value.trim();
-        if (name) {
-            await Store.addEmployee({ id: Date.now().toString(), name, shopId: shop.id, available: true });
-            renderOwnerDashboard();
+        const email = document.getElementById('emp-email').value.trim().toLowerCase();
+        const errEl = document.getElementById('emp-error');
+        const okEl  = document.getElementById('emp-success');
+        errEl.style.display = 'none';
+        okEl.style.display  = 'none';
+        if (!email) return;
+
+        const allUsers = await Store.getUsers();
+        const match = allUsers.find(u => (u.email || '').toLowerCase() === email);
+
+        if (!match) {
+            errEl.textContent = t('barberNotFound');
+            errEl.style.display = 'block';
+            return;
         }
+
+        const existing = await Store.getEmployees(shop.id);
+        if (existing.find(e => e.uid === match.uid)) {
+            errEl.textContent = t('barberAlreadyAdded');
+            errEl.style.display = 'block';
+            return;
+        }
+
+        await Store.setUserRole(match.uid, 'employee');
+        await Store.addEmployee({ id: Date.now().toString(), uid: match.uid, name: match.name || match.email, email: match.email, shopId: shop.id, available: true });
+        document.getElementById('emp-email').value = '';
+        okEl.style.display = 'block';
+        setTimeout(() => renderOwnerDashboard(), 1200);
     };
 
     // Add service
