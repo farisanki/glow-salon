@@ -1,6 +1,18 @@
 import { initAuth, onAuthStateChanged, logout } from './auth.js';
 import { renderView, updateNotiBell } from './ui.js';
 
+function showError(err) {
+    console.error("App Error:", err);
+    const main = document.getElementById('main-content');
+    main.innerHTML = `
+        <div class="glass-card p-4" style="margin:2rem;text-align:center">
+            <h2 style="color:var(--error)">Something went wrong</h2>
+            <p class="text-secondary mt-4">${err?.message || 'Unknown error'}</p>
+            <button class="btn-primary mt-4" onclick="location.reload()">Reload</button>
+        </div>
+    `;
+}
+
 async function initApp() {
     console.log("App Initializing...");
     try {
@@ -14,12 +26,12 @@ async function initApp() {
                 document.getElementById('noti-btn').style.display = 'block';
                 document.getElementById('bottom-nav').style.display = 'flex';
                 updateNotiBell();
-                renderView('home');
+                renderView('home').catch(showError);
             } else {
                 document.getElementById('logout-btn').style.display = 'none';
                 document.getElementById('noti-btn').style.display = 'none';
                 document.getElementById('bottom-nav').style.display = 'none';
-                renderView('login');
+                renderView('login').catch(showError);
             }
         });
 
@@ -40,7 +52,7 @@ async function initApp() {
             navigator.serviceWorker.register('./sw.js').then(() => console.log('SW Registered'));
         }
     } catch (err) {
-        console.error("Initialization Failed:", err);
+        showError(err);
     }
 }
 
